@@ -43,28 +43,108 @@ exports.register = async (req, res) => {
 /**
  * Login - Step 1: Generate and send OTP
  */
+// exports.login = async (req, res) => {
+//   const { email } = req.body;
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(404).json({ error: 'Email not found' });
+
+//     const otp = generateOTP();
+//     user.otp = otp;
+//     user.otpExpiry = Date.now() + 5 * 60 * 1000;
+//     await user.save();
+
+//     await sendOTP(email, otp);
+//     res.status(200).json({ message: 'OTP sent to email' });
+//   } catch (err) {
+//     console.error('Login error:', err);
+//     res.status(500).json({ error: 'Login OTP failed' });
+//   }
+// };
+
+// /**
+//  * OTP Verification (for both register and login)
+//  */
+// exports.verifyOtp = async (req, res) => {
+//   const { email, otp: inputOtp, isLogin } = req.body;
+//   const normalizedEmail = email.toLowerCase().trim();
+//   const otp = inputOtp.toString().trim();
+
+//   try {
+//     if (isLogin) {
+//       const user = await User.findOne({ email: normalizedEmail });
+//       if (!user || user.otp !== otp || Date.now() > user.otpExpiry) {
+//         return res.status(400).json({ error: 'Invalid or expired OTP' });
+//       }
+
+//       user.otp = null;
+//       user.otpExpiry = null;
+//       await user.save();
+
+//       const token = jwt.sign({ userId: user._id }, process.env.JWT_KEY, { expiresIn: '1d' });
+//       return res.status(200).json({ message: 'Login successful', token, user });
+//     } else {
+//       const tempData = tempUsers.get(normalizedEmail);
+//       if (!tempData || tempData.otp !== otp || Date.now() > tempData.otpExpiry) {
+//         return res.status(400).json({ error: 'Invalid or expired OTP' });
+//       }
+
+//       const alreadyExists = await User.findOne({ email: normalizedEmail });
+//       if (alreadyExists) return res.status(400).json({ error: 'User already registered' });
+
+//       const newUser = await User.create({
+//         Name: tempData.Name,
+//         contactNo: tempData.contactNo,
+//         email: tempData.email,
+//       });
+
+//       tempUsers.delete(normalizedEmail);
+
+//       const token = jwt.sign({ userId: newUser._id }, process.env.JWT_KEY, { expiresIn: '1d' });
+//       return res.status(200).json({ message: 'Registration successful', token, user: newUser });
+//     }
+//   } catch (err) {
+//     console.error('OTP verify error:', err);
+//     res.status(500).json({ error: 'OTP verification failed' });
+//   }
+// };
+
+
 exports.login = async (req, res) => {
   const { email } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: 'Email not found' });
+  if (!email) {
+    return res.status(400).json({ message: 'email required' });
+  }
 
-    const otp = generateOTP();
-    user.otp = otp;
-    user.otpExpiry = Date.now() + 5 * 60 * 1000;
-    await user.save();
+  try {
+    const existingUser = await User.findOne({ email });
+
+    if (!existingUser) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Fixed OTP for specific email
+    const otp =
+      email === 'anantnimbalkar4@gmail.com'
+        ? '4678'
+        : Math.floor(1000 + Math.random() * 9000).toString();
+
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await sendOTP(email, otp);
-    res.status(200).json({ message: 'OTP sent to email' });
+
+    existingUser.otp = otp;
+    existingUser.otpExpiry = otpExpiry;
+    await existingUser.save();
+
+    return res.status(200).json({ message: 'OTP sent successfully' });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Login OTP failed' });
+    console.error("Login error:", err);
+    return res.status(500).json({ message: 'OTP not sent due to server error' });
   }
 };
 
-/**
- * OTP Verification (for both register and login)
- */
+
 exports.verifyOtp = async (req, res) => {
   const { email, otp: inputOtp, isLogin } = req.body;
   const normalizedEmail = email.toLowerCase().trim();
@@ -72,6 +152,7 @@ exports.verifyOtp = async (req, res) => {
 
   try {
     if (isLogin) {
+      // ✅ Login Flow
       const user = await User.findOne({ email: normalizedEmail });
       if (!user || user.otp !== otp || Date.now() > user.otpExpiry) {
         return res.status(400).json({ error: 'Invalid or expired OTP' });
@@ -84,13 +165,16 @@ exports.verifyOtp = async (req, res) => {
       const token = jwt.sign({ userId: user._id }, process.env.JWT_KEY, { expiresIn: '1d' });
       return res.status(200).json({ message: 'Login successful', token, user });
     } else {
+      // ✅ Registration Flow
       const tempData = tempUsers.get(normalizedEmail);
       if (!tempData || tempData.otp !== otp || Date.now() > tempData.otpExpiry) {
         return res.status(400).json({ error: 'Invalid or expired OTP' });
       }
 
       const alreadyExists = await User.findOne({ email: normalizedEmail });
-      if (alreadyExists) return res.status(400).json({ error: 'User already registered' });
+      if (alreadyExists) {
+        return res.status(400).json({ error: 'User already registered' });
+      }
 
       const newUser = await User.create({
         Name: tempData.Name,
@@ -105,9 +189,11 @@ exports.verifyOtp = async (req, res) => {
     }
   } catch (err) {
     console.error('OTP verify error:', err);
-    res.status(500).json({ error: 'OTP verification failed' });
+    return res.status(500).json({ error: 'OTP verification failed' });
   }
 };
+
+
 
 /**
  * Resend OTP

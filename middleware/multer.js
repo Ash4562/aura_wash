@@ -5,11 +5,16 @@ const cloudinary = require('../utils/cloudinary');
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'categories', // folder name in Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg'],
+    folder: 'categories', // Cloudinary folder
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    transformation: [{ quality: 'auto' }], // optional (Cloudinary auto-optimize karega)
   },
 });
 
-const upload = multer({ storage });
+// Increase file size limit (e.g., 50MB)
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+});
 
 module.exports = upload;

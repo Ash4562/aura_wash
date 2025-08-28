@@ -22,7 +22,6 @@ app.use("/shop/pickup", require("./routes/conatct/PickupRoutes"));
 app.use("/shop/auth", require("./routes/shop/shopAuthroutes"));
 app.use('/shop/service', require('./routes/shop/serviceRoutes'));
 app.use('/shop/product', require('./routes/shop/ProductRoutes'));
-app.use('/shop/notes', require('./routes/shop/ShotNoteRoutes'));
 // photo
 app.use('/shop/gallery', require('./routes/shop/GalleryRoutes'));
 app.use('/shop/offer', require('./routes/shop/OfferRoutes'));

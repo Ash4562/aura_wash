@@ -40,14 +40,6 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  paidAmount: {
-    type: Number,
-    default: 0
-  },
-  balanceAmount: {
-    type: Number,
-    default: 0
-  },
   pickupDateTime: {
     type: String, // or Date
     required: true
@@ -72,7 +64,7 @@ const orderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ['pending', 'ongoing', 'pickup', 'washing', 'completed', 'delivered','orderRejectByDeliveryBoy','rejected'],
+    enum: ['pending', 'ongoing', 'pickup', 'washing', 'completed', 'delivered'],
     default: 'pending'
   }
 }, {
@@ -80,3 +72,4 @@ const orderSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Order', orderSchema);
+// 

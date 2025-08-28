@@ -141,75 +141,31 @@ exports.getAllOrders = async (req, res) => {
 
 
 
-exports.getTotelbalanceAmount = async (req, res) => {
-  const { userId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ error: 'Invalid userId format' });
-  }
-
-  try {
-    const orders = await orderModel.find({ userId })
-      // .populate('shopId', 'shopName contactNo')
-      // .populate('addressId')
-      // .populate('services.serviceId', 'name image')
-      .sort({ createdAt: -1 });
-
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: 'No orders found for this user' });
-    }
-
-    // ✅ Calculate totalBalanceAmount properly
-    const totalBalanceAmount = orders.reduce((sum, order) => {
-      return sum + (order.balanceAmount || 0);
-    }, 0);
-
-    // 🔍 Optional: log to see value
-    console.log("Total Balance:", totalBalanceAmount);
-
-    res.status(200).json({
-      orders,
-      totalBalanceAmount
-    });
-
-  } catch (error) {
-    console.error('Error fetching orders by userId:', error);
-    res.status(500).json({ error: 'Failed to fetch orders' });
-  }
-};
-
 exports.getOrdersByUserId = async (req, res) => {
   const { userId } = req.params;
 
+  // Validate ObjectId format
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ error: 'Invalid userId format' });
   }
 
   try {
     const orders = await orderModel.find({ userId })
-      .populate('shopId', 'shopName contactNo')
-      .populate('addressId')
-      .populate('services.serviceId', 'name image')
-      .sort({ createdAt: -1 });
+      .populate('shopId', 'shopName contactNo') // Optional: populate shop info
+      .populate('addressId') // Optional: populate address
+      .populate('services.serviceId', 'name image') // ✅ Populate service details
+      .sort({ createdAt: -1 }); // latest first
 
     if (orders.length === 0) {
       return res.status(404).json({ message: 'No orders found for this user' });
     }
 
-    // 🧮 Calculate total balance amount
-    const totalBalanceAmount = orders.reduce((acc, order) => acc + (order.balanceAmount || 0), 0);
-
-    res.status(200).json({
-      orders,
-      totalBalanceAmount
-    });
-
+    res.status(200).json({ orders });
   } catch (error) {
     console.error('Error fetching orders by userId:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
   }
 };
-
 
   // user side 
 
@@ -309,199 +265,46 @@ exports.getOrdersByUserIdwithOrderStatus = async (req, res) => {
       res.status(500).json({ error: 'Failed to assign delivery and send OTP' });
     }
   };
-  // exports.verifyOrderDeliveryOTP = async (req, res) => {
-  //   const { orderId } = req.params;
-  //   const { otp } = req.body;
+  exports.verifyOrderDeliveryOTP = async (req, res) => {
+    const { orderId } = req.params;
+    const { otp } = req.body;
   
-  //   try {
-  //     const order = await orderModel.findById(orderId);
-  //     if (!order) return res.status(404).json({ error: 'Order not found' });
+    try {
+      const order = await orderModel.findById(orderId);
+      if (!order) return res.status(404).json({ error: 'Order not found' });
   
-  //     if (!order.otp || !order.otpExpiresAt) {
-  //       return res.status(400).json({ error: 'No OTP found for this order' });
-  //     }
+      if (!order.otp || !order.otpExpiresAt) {
+        return res.status(400).json({ error: 'No OTP found for this order' });
+      }
   
-  //     // Check OTP match
-  //     if (order.otp !== otp) {
-  //       return res.status(400).json({ error: 'Invalid OTP' });
-  //     }
+      // Check OTP match
+      if (order.otp !== otp) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+      }
   
-  //     // Check expiry
-  //     if (new Date() > order.otpExpiresAt) {
-  //       return res.status(400).json({ error: 'OTP has expired' });
-  //     }
+      // Check expiry
+      if (new Date() > order.otpExpiresAt) {
+        return res.status(400).json({ error: 'OTP has expired' });
+      }
   
-  //     // Mark as delivered
-  //     order.isOtpVerified = true;
-  //     order.orderStatus = 'delivered'; // or 'completed' if that's your status
-  //     order.otp = null;
-  //     order.otpExpiresAt = null;
+      // Mark as delivered
+      order.isOtpVerified = true;
+      order.orderStatus = 'delivered'; // or 'completed' if that's your status
+      order.otp = null;
+      order.otpExpiresAt = null;
   
-  //     await order.save();
+      await order.save();
   
-  //     res.status(200).json({
-  //       message: 'OTP verified successfully. Order marked as delivered.',
-  //       order
-  //     });
+      res.status(200).json({
+        message: 'OTP verified successfully. Order marked as delivered.',
+        order
+      });
   
-  //   } catch (error) {
-  //     console.error('OTP verification failed:', error);
-  //     res.status(500).json({ error: 'OTP verification failed' });
-  //   }
-  // };
-
-// reject order by deliveryBoy
-// exports.rejectOrderByDeliveryBoy = async (req, res) => {
-//   const { orderId } = req.params;
-
-//   try {
-//     const order = await orderModel.findById(orderId);
-//     if (!order) return res.status(404).json({ error: 'Order not found' });
-
-//     // Optional check: Prevent rejection of already completed orders
-//     if (order.orderStatus === 'completed') {
-//       return res.status(400).json({ error: 'Cannot reject a completed order' });
-//     }
-
-//     order.orderStatus = 'orderRejectByDeliveryBoy';
-//     order.rejectedAt = new Date(); // Optional: track when it was rejected
-
-//     await order.save();
-
-//     res.status(200).json({ message: 'Order rejected by delivery boy', order });
-//   } catch (error) {
-//     console.error('Reject order error:', error);
-//     res.status(500).json({ error: 'Failed to reject order' });
-//   }
-// };
-
-
-
-
-exports.verifyOrderDeliveryOTP = async (req, res) => {
-  const { orderId } = req.params;
-  const { otp, paidAmount } = req.body; // paidAmount optional, default = 0
-
-  try {
-    const order = await orderModel.findById(orderId);
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    if (!order.otp || !order.otpExpiresAt) {
-      return res.status(400).json({ error: 'No OTP found for this order' });
+    } catch (error) {
+      console.error('OTP verification failed:', error);
+      res.status(500).json({ error: 'OTP verification failed' });
     }
-
-    if (order.otp !== otp) {
-      return res.status(400).json({ error: 'Invalid OTP' });
-    }
-
-    if (new Date() > order.otpExpiresAt) {
-      return res.status(400).json({ error: 'OTP has expired' });
-    }
-
-    const total = order.totalAmount;
-    const paid = Number(paidAmount || 0);
-
-    if (paid < 0 || paid > total) {
-      return res.status(400).json({ error: 'Invalid paid amount' });
-    }
-
-    const balance = total - paid;
-
-    // Update order
-    order.paidAmount = paid;
-    order.balanceAmount = balance;
-    order.isOtpVerified = true;
-    order.orderStatus = 'delivered';
-    order.otp = null;
-    order.otpExpiresAt = null;
-
-    await order.save();
-
-    res.status(200).json({
-      message: 'OTP verified successfully. Order marked as delivered.',
-      order
-    });
-
-  } catch (error) {
-    console.error('OTP verification failed:', error);
-    res.status(500).json({ error: 'OTP verification failed' });
-  }
-};
-
-
-
-
-
-exports.rejectOrderByDeliveryBoy = async (req, res) => {
-  const { orderId } = req.params;
-  const { deliveryBoyId } = req.body;
-
-  try {
-    if (!deliveryBoyId) {
-      return res.status(400).json({ error: 'deliveryBoyId is required' });
-    }
-
-    const order = await orderModel.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    if (order.orderStatus === 'completed') {
-      return res.status(400).json({ error: 'Cannot reject a completed order' });
-    }
-
-    order.orderStatus = 'orderRejectByDeliveryBoy';
-    order.rejectedAt = new Date();
-    order.deliveryBoyId = deliveryBoyId; // Set/Update the delivery boy who rejected
-
-    await order.save();
-
-    res.status(200).json({
-      message: 'Order rejected by delivery boy',
-      order,
-      rejectedBy: deliveryBoyId,
-    });
-  } catch (error) {
-    console.error('Reject order error:', error);
-    res.status(500).json({ error: 'Failed to reject order' });
-  }
-};
-
-
-
-exports.getRejectedOrdersByDeliveryBoy = async (req, res) => {
-  const { deliveryBoyId } = req.params;
-
-  try {
-    const rejectedOrders = await orderModel.find({
-      deliveryBoyId: deliveryBoyId,
-      orderStatus: 'orderRejectByDeliveryBoy',
-    }).populate('userId').populate('addressId').populate('shopId'); // optional populate
-console.log("rejectedOrders",rejectedOrders);
-    res.status(200).json({ rejectedOrders });
-  } catch (error) {
-    console.error('Get rejected orders error:', error);
-    res.status(500).json({ error: 'Failed to fetch rejected orders' });
-  }
-};
-exports.getCompletedOrdersByDeliveryBoy = async (req, res) => {
-  const { deliveryBoyId } = req.params;
-
-  try {
-    const rejectedOrders = await orderModel.find({
-      deliveryBoyId: deliveryBoyId,
-      orderStatus: 'completed',
-    }).populate('userId').populate('addressId').populate('shopId'); // optional populate
-console.log("completedOrders",rejectedOrders);
-    res.status(200).json({ rejectedOrders });
-  } catch (error) {
-    console.error('Get completed orders error:', error);
-    res.status(500).json({ error: 'Failed to fetch completed orders' });
-  }
-};
-
-
-
+  };
   // delivery side 
   exports.getOrdersByDeliveryBoy = async (req, res) => {
     try {

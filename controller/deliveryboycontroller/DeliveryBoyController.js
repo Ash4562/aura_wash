@@ -10,144 +10,39 @@ const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 // Temporary store for registration data
 const tempUsers = new Map(); // key: email, value: { userData + otp }
 
+/**
+ * Register - Step 1: Store data and send OTP
+ */
+exports.register = async (req, res) => {
+  const { Name, contactNo, email, shopId,AadharNO,DrivingLicence } = req.body;
 
+  if (!Name || !contactNo || !email || !shopId) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
 
-
-
-
-
-
-exports.registerDriver = async (req, res) => {
   try {
-    const {
-      Name,
-      email,
-      address,
-      contactNo,
-      VehicleType,
-      VehicleName,
-      VehicleNumber,
-      RCbookNumber,
-      DrivingLicenceNo,
-      IDProofNo,
-      latitude,
-      longitude
-    } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+    const otp = generateOTP();
+    const otpExpiry = Date.now() + 5 * 60 * 1000;
 
-    const {
-      DrivingLicenceImage,
-      RCbookImage,
-      ProfileImage,
-      IDProofImage
-    } = req.files;
-
-    // ✅ Basic validation (optional but recommended)
-    if (!email || !contactNo || !ProfileImage) {
-      return res.status(400).json({ error: 'Required fields missing' });
-    }
-
-    // ✅ Check for existing driver
-    const existing = await DriverAuth.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ error: 'Driver already registered with this email' });
-    }
-
-    // ✅ Create driver entry
-    const newDriver = new DriverAuth({
-      Name,
-      email,
-      address,
-      contactNo,
-      VehicleType,
-      VehicleName,
-      VehicleNumber,
-      RCbookNumber,
-      DrivingLicenceNo,
-      IDProofNo,
-
-      DrivingLicenceImage: DrivingLicenceImage?.[0]?.path || null,
-      RCbookImage: RCbookImage?.[0]?.path || null,
-      ProfileImage: ProfileImage?.[0]?.path || null,
-      IDProofImage: IDProofImage?.[0]?.path || null,
-
-      locations: {
-        latitude: latitude ? parseFloat(latitude) : undefined,
-        longitude: longitude ? parseFloat(longitude) : undefined
-      },
+    tempUsers.set(normalizedEmail, {
+      Name: Name.trim(),
+      contactNo: contactNo.trim(),
+      email: normalizedEmail,
+      AadharNO: AadharNO.trim(),
+      DrivingLicence: DrivingLicence.trim(),
+      shopId: shopId.trim(), // Add shopId here
+      otp,
+      otpExpiry,
     });
 
-    await newDriver.save();
-
-    res.status(201).json({
-      message: 'Driver registered successfully',
-      driver: newDriver
-    });
-  } catch (error) {
-    console.error('Driver registration failed:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    await sendOTP(normalizedEmail, otp);
+    res.status(200).json({ message: 'OTP sent to email' });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Failed to send OTP' });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// exports.register = async (req, res) => {
-//   const { Name, contactNo, email, shopId, AadharNO, DrivingLicence, latitude, longitude } = req.body;
-
-//   if (!Name || !contactNo || !email || !shopId) {
-//     return res.status(400).json({ error: 'All required fields are not provided' });
-//   }
-
-//   try {
-//     const normalizedEmail = email.toLowerCase().trim();
-//     const otp = generateOTP();
-//     const otpExpiry = Date.now() + 5 * 60 * 1000;
-
-//     const AadharImage = req.files?.AadharImage?.[0]?.path || null;
-//     const DrivingLicenceImage = req.files?.DrivingLicenceImage?.[0]?.path || null;
-//     const DeliveryBoyProfileImg = req.files?.DeliveryBoyProfileImg?.[0]?.path || null;
-
-//     tempUsers.set(normalizedEmail, {
-//       Name: Name.trim(),
-//       contactNo: contactNo.trim(),
-//       email: normalizedEmail,
-//       AadharNO: AadharNO?.trim(),
-//       DrivingLicence: DrivingLicence?.trim(),
-//       AadharImage,
-//       DrivingLicenceImage,
-//       DeliveryBoyProfileImg,
-//       shopId: shopId.trim(),
-//       locations: {
-//         latitude: latitude ? parseFloat(latitude) : null,
-//         longitude: longitude ? parseFloat(longitude) : null
-//       },
-//       otp,
-//       otpExpiry,
-//     });
-
-//     await sendOTP(normalizedEmail, otp);
-//     res.status(200).json({ message: 'OTP sent to email' });
-//   } catch (err) {
-//     console.error('Register error:', err);
-//     res.status(500).json({ error: 'Failed to send OTP' });
-//   }
-// };
-
-
-
-
-
-
 
 
 /**
@@ -209,13 +104,6 @@ exports.verifyOtp = async (req, res) => {
         shopId: tempData.shopId, 
         DrivingLicence: tempData.DrivingLicence, 
         AadharNO: tempData.AadharNO, 
-        AadharImage: tempData.AadharImage || null,
-        DrivingLicenceImage: tempData.DrivingLicenceImage || null,
-        DeliveryBoyProfileImg: tempData.DeliveryBoyProfileImg || null,
-        locations: {
-          latitude: tempData.locations?.latitude || null,
-          longitude: tempData.locations?.longitude || null
-        }
       });
 
       tempUsers.delete(normalizedEmail);

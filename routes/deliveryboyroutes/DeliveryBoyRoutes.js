@@ -1,20 +1,10 @@
 const express = require('express');
 const { register, verifyOtp, login, resendOtp, logout, updateUserDetails, getUserDetails, getAllUser, getDeliveryBoysByShopId, deleteDeliveryBoy } = require('../../controller/deliveryboycontroller/DeliveryBoyController');
-const upload = require('../../middleware/multer');
 const router = express.Router();
 
 
 // Register with OTP (Step 1 - send OTP)
-// router.post('/register',register);
-router.post(
-    '/register',
-    upload.fields([
-      { name: 'AadharImage', maxCount: 1 },
-      { name: 'DrivingLicenceImage', maxCount: 1 },
-      { name: 'DeliveryBoyProfileImg', maxCount: 1 }
-    ]),
-    register
-  );
+router.post('/register',register);
 
 // Verify OTP and finalize registration
 router.post('/verify-otp',verifyOtp);

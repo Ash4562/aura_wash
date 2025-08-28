@@ -11,17 +11,7 @@ const addressSchema = new mongoose.Schema({
   location: { type: String, required: true }, // Area / Locality
   email: { type: String, required: true }, // Area / Locality
   city: { type: String, required: true },
-  pincode: { type: String, required: true },
-  locations: {
-    latitude: {
-      type: Number,
-      required: false  // make true if always required
-    },
-    longitude: {
-      type: Number,
-      required: false
-    }
-  },
+  pincode: { type: String, required: true }
 }, {
   timestamps: true
 });
