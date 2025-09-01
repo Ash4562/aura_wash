@@ -68,6 +68,7 @@ console.log("otp",otp);
     await sendOTP(email, otp);
     res.status(200).json({ message: 'OTP sent to email' });
   } catch (err) {
+    console.log("err",err);
     res.status(500).json({ error: 'Login OTP send failed' });
   }
 };

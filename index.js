@@ -12,6 +12,8 @@ app.use(cors({
         "http://localhost:5174",
         "https://planet-wash-site.onrender.com",
         "https://admin.planetwash.in",
+        "https://planetwash-shop.vercel.app",
+        "https://planetwash-shop.vercel.app/"
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
