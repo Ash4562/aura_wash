@@ -87,7 +87,7 @@ exports.login = async (req, res) => {
 
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await sendOTP(email, otp);
+    // await sendOTP(email, otp);
 
     existingUser.otp = otp;
     existingUser.otpExpiry = otpExpiry;
