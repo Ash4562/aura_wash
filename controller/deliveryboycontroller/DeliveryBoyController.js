@@ -48,22 +48,55 @@ exports.register = async (req, res) => {
 /**
  * Login - Step 1: Generate and send OTP
  */
+// exports.login = async (req, res) => {
+//   const { email } = req.body;
+//   try {
+//     const user = await Delivery.findOne({ email });
+//     if (!user) return res.status(404).json({ error: 'Email not found' });
+
+//     const otp = generateOTP();
+//     user.otp = otp;
+//     user.otpExpiry = Date.now() + 5 * 60 * 1000;
+//     await user.save();
+
+//     await sendOTP(email, otp);
+//     res.status(200).json({ message: 'OTP sent to email' });
+//   } catch (err) {
+//     console.error('Login error:', err);
+//     res.status(500).json({ error: 'Login OTP failed' });
+//   }
+// };
 exports.login = async (req, res) => {
   const { email } = req.body;
-  try {
-    const user = await Delivery.findOne({ email });
-    if (!user) return res.status(404).json({ error: 'Email not found' });
+  if (!email) {
+    return res.status(400).json({ message: 'email required' });
+  }
 
-    const otp = generateOTP();
-    user.otp = otp;
-    user.otpExpiry = Date.now() + 5 * 60 * 1000;
-    await user.save();
+  try {
+    const existingUser = await Delivery.findOne({ email });
+
+    if (!existingUser) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Fixed OTP for specific email
+    const otp =
+      email === 'japeshravani00@gmail.com'
+        ? '4678'
+        : Math.floor(1000 + Math.random() * 9000).toString();
+
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await sendOTP(email, otp);
-    res.status(200).json({ message: 'OTP sent to email' });
+
+    existingUser.otp = otp;
+    existingUser.otpExpiry = otpExpiry;
+    await existingUser.save();
+
+    return res.status(200).json({ message: 'OTP sent successfully' });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Login OTP failed' });
+    console.error("Login error:", err);
+    return res.status(500).json({ message: 'OTP not sent due to server error' });
   }
 };
 
