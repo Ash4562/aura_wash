@@ -2,7 +2,7 @@
 const express = require('express');
 const { placeOrder, getAllOrders,getOrdersByShopId, getOrderById, assignDeliveryBoy, getOrdersByDeliveryBoy, verifyOrderOTP, assignDeliveryAndComplete, verifyOrderDeliveryOTP, getOrdersByStatus, getOrdersByUserId, getOrdersByUserIdwithOrderStatus } = require('../../controller/user/orderController');
 const router = express.Router();
-// const orderController = require('../controllers/orderController');
+
 
 router.post('/place', placeOrder);
 router.get('/all', getAllOrders);
@@ -12,11 +12,11 @@ router.get('/getOrdersByUserIdwithOrderStatus/:userId', getOrdersByUserIdwithOrd
 router.put('/assign-delivery/:orderId', assignDeliveryBoy);
 router.put('/assign-deliveryboy-completed/:orderId', assignDeliveryAndComplete);
 router.post('/verify-delivery-otp/:orderId', verifyOrderDeliveryOTP);
-// delivery
+
 router.get('/delivery-boy/:deliveryBoyId', getOrdersByDeliveryBoy);
 router.get('/status/:status',getOrdersByStatus);
 router.get('/shop/:shopId', getOrdersByShopId);
 
 
-
+// dfafadf
 module.exports = router;
